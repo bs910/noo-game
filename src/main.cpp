@@ -71,6 +71,12 @@ public:
     }
 
     void
+    onMouseWheel( double x_offset, double y_offset )
+    {
+        noolog::info( "Mouse wheel x: " + std::to_string( x_offset ) + " y: " + std::to_string( y_offset ) );
+    }
+
+    void
     onMouseButton( MouseButton button, MouseAction action )
     {
         noolog::info( "Mouse button " + to_string( button ) + " was " + to_string( action ) + "ed." );
@@ -115,9 +121,11 @@ static void mouseButtonCallback( GLFWwindow * window, int button, int action, in
 }
 
 ///
-static void scrollCallback( GLFWwindow * /* window */, double xoffset, double yoffset )
+static void scrollCallback( GLFWwindow * window, double xoffset, double yoffset )
 {
-    noolog::info( "Scroll x: " + std::to_string( xoffset ) + " y: " + std::to_string( yoffset ) );
+    InputHandler & input = *static_cast< InputHandler * >( glfwGetWindowUserPointer( window ) );
+
+    input.onMouseWheel( xoffset, yoffset );
 }
 
 
@@ -141,7 +149,8 @@ int main( int /* argc */, char ** /* argv */ )
     glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 5 );
     //glfwWindowHint( GLFW_SAMPLES, 16 ); // enable multi-sampling
 
-    GLFWwindow * window = glfwCreateWindow( 800, 600, "Nation of One", nullptr, nullptr );
+    glm::ivec2 const window_size( 800, 600 );
+    GLFWwindow * window = glfwCreateWindow( window_size.x, window_size.y, "Nation of One", nullptr, nullptr );
 
     InputHandler inputHandler;
     glfwSetWindowUserPointer( window, &inputHandler );
@@ -167,31 +176,36 @@ int main( int /* argc */, char ** /* argv */ )
     glm::vec4 const clrColor{ 0.39, 0.58, 0.92, 1.0 };
 
     noo::renderer::Renderer renderer;
-    renderer.initialize();
+    renderer.initialize( window_size.x, window_size.y );
+
+    using noo::renderer::ETextureFormat;
 
     int const rt_width  = 40;
     int const rt_height = 30;
 
-    auto rt = renderer.createRenderTarget();
-    auto rt_color = renderer.createTexture2D( rt_width, rt_height );
-    auto rt_depth = renderer.createRenderBuffer( rt_width, rt_height, noo::renderer::RenderBuffer::DEPTH_24_STENCIL_8 );
+    auto rt = renderer.createRenderTarget( rt_width, rt_height );
+    auto rt_color = renderer.createTexture2D( rt_width, rt_height, ETextureFormat::RGB );
+    auto rt_depth = renderer.createTexture2D( rt_width, rt_height, ETextureFormat::DEPTH_24_STENCIL_8 );
 
     rt->attachTexture2D( noo::renderer::RenderTarget::COLOR_ATTACHMENT0, *rt_color );
-    rt->attachRenderbuffer( noo::renderer::RenderTarget::DEPTH_STENCIL_ATTACHMENT, *rt_depth );
+    rt->attachTexture2D( noo::renderer::RenderTarget::DEPTH_STENCIL_ATTACHMENT, *rt_depth );
+    //rt->attachRenderbuffer( noo::renderer::RenderTarget::DEPTH_STENCIL_ATTACHMENT, *rt_depth );
 
-    std::vector< noo::renderer::Vertex_Pos3Color4 > vData = {
-        { -0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f },
+    std::vector< noo::renderer::Vertex_Pos3Color4 > vData =
+    {
+        { -0.5f,  0.5f, 10.0f, 1.0f, 0.0f, 0.0f, 1.0f },
         { -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f },
-        {  0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f },
-     };
+        {  0.5f, -0.5f, -10.0f, 0.0f, 0.0f, 1.0f, 1.0f },
+    };
 
     auto vbo_tri = renderer.createVertexBuffer();
     vbo_tri->upload( vData.size() * noo::renderer::Vertex_Pos3Color4::SizeInBytes, vData.data() );
 
-    std::vector< noo::renderer::Vertex_Pos3Tex2 > vQuad = {
+    std::vector< noo::renderer::Vertex_Pos3Tex2 > vQuad =
+    {
         { -1.0f, -1.0f, 0.0f, 0.0f, 0.0f },
-        { -1.0f,  1.0f, 0.0f, 0.0f, 1.0f },
         {  1.0f,  1.0f, 0.0f, 1.0f, 1.0f },
+        { -1.0f,  1.0f, 0.0f, 0.0f, 1.0f },
 
         {  1.0f,  1.0f, 0.0f, 1.0f, 1.0f },
         { -1.0f, -1.0f, 0.0f, 0.0f, 0.0f },
@@ -211,7 +225,7 @@ int main( int /* argc */, char ** /* argv */ )
 
     auto shaderTex = renderer.createShader( texVS.c_str(), nullptr, nullptr, nullptr, texFS.c_str() );
 
-    /*int const tex_size = 32;
+    int const tex_size = 32;
 
     std::array< unsigned char, tex_size * tex_size * 4 > imgData;
 
@@ -224,17 +238,13 @@ int main( int /* argc */, char ** /* argv */ )
             imgData[ 4*y * tex_size + x*4 + 3 ] = 255;
         }
 
-    auto tex = renderer.createTexture2D( tex_size, tex_size, imgData.data() );
-
-    noolog::trace( std::string( "Mesh primitive count: " )   + std::to_string( vbo->getNumPrimitives() ) );
-    noolog::trace( std::string( "Mesh 1 primitive count: " ) + std::to_string( mesh1->getNumPrimitives() ) );
-    noolog::trace( std::string( "Quad primitive count: " )   + std::to_string( quadmesh->getNumPrimitives() ) );*/
+    auto tex = renderer.createTexture2D( tex_size, tex_size, ETextureFormat::RGBA, imgData.data() );
 
 
     noo::scene::Camera cam;
     cam.setAspectRatio( 800.0f / 600.0f );
     cam.setPosition( 0, 0, 4 );
-    cam.lookAt( glm::vec3( 0, 0, 0 ) );
+    cam.lookAt( 0, 0, 0 );
 
     noo::renderer::Shader::Data shdSolid( *shaderSolid );
     noo::renderer::Shader::Data shdTex( *shaderTex );
@@ -258,37 +268,51 @@ int main( int /* argc */, char ** /* argv */ )
     using noo::renderer::EWrapMode;
     using noo::renderer::EMinFilterMode;
     using noo::renderer::EMagFilterMode;
+    using noo::renderer::state::StateSet;
+
+
+    int frame = 0;
+    int border = 15;
 
     while ( ! glfwWindowShouldClose( window ) )
     {
+        StateSet stateSet;
+
         // pre-pass - render to texture
         {
-            glViewport( 0, 0, rt_width, rt_height );
-            renderer.clear( *rt, clrColor );
+            renderer.clear( *rt, clrColor, 1.0f, 0 );
 
             {
                 shdSolid[ "u_mvp" ] = cam.getViewProjectionMatrix();
                 shdSolid[ "u_color" ] = glm::vec4( 1, 1, 1, 1 );
 
-                // target, shader instance data, geometry, states
-                renderer.draw( *rt, shdSolid, geoTri );
+                renderer.draw( *rt, shdSolid, stateSet, geoTri );
             }
         }
 
         // render textured quad to screen
         {
-            glViewport( 0, 0, 800, 600 );
-            renderer.clear( noo::renderer::RenderTarget::Default(), glm::vec4( 1, 0, 0, 1 ) );
-            {
-                shdTex[ "u_mvp" ] = glm::mat4(); // cam.getViewProjectionMatrix();
-                shdTex[ "s2D_tex" ] = noo::renderer::TextureSampler{ rt_color.get(), EWrapMode::REPEAT, EWrapMode::REPEAT, EMinFilterMode::LINEAR, EMagFilterMode::LINEAR };
+            stateSet.viewport = noo::renderer::state::ViewportState( border, border, renderer.defaultRenderTarget().getWidth() - border*2, renderer.defaultRenderTarget().getHeight() - border*2 );
 
-                renderer.draw( noo::renderer::RenderTarget::Default(), shdTex, geoQuad );
+            renderer.clear( renderer.defaultRenderTarget(), glm::vec4( 0, 1, 0, 1 ) );
+            {
+                shdTex[ "u_mvp" ] = glm::mat4();
+
+                if ( frame % 150 < 50 )
+                    shdTex[ "s2D_tex" ] = noo::renderer::TextureSampler{ rt_color.get(), EWrapMode::REPEAT, EWrapMode::REPEAT, EMinFilterMode::NEAREST, EMagFilterMode::NEAREST };
+                else if ( frame % 150 < 100 )
+                    shdTex[ "s2D_tex" ] = noo::renderer::TextureSampler{ rt_depth.get(), EWrapMode::REPEAT, EWrapMode::REPEAT, EMinFilterMode::NEAREST, EMagFilterMode::NEAREST };
+                else
+                    shdTex[ "s2D_tex" ] = noo::renderer::TextureSampler{ tex.get(), EWrapMode::CLAMP, EWrapMode::MIRROR, EMinFilterMode::NEAREST, EMagFilterMode::NEAREST };
+
+                renderer.draw( renderer.defaultRenderTarget(), shdTex, stateSet, geoQuad );
             }
         }
 
         glfwSwapBuffers( window );
         glfwPollEvents();
+
+        ++frame;
     }
 
     renderer.destroy();

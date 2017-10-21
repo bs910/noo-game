@@ -5,8 +5,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef NOO_RENDERER_STATES_STENCILSTATE_HPP_INCLUDED
-#define NOO_RENDERER_STATES_STENCILSTATE_HPP_INCLUDED
+#ifndef NOO_RENDERER_STATE_STENCILSTATE_HPP_INCLUDED
+#define NOO_RENDERER_STATE_STENCILSTATE_HPP_INCLUDED
 
 
 /// Includes
@@ -14,16 +14,16 @@
 
 namespace noo {
 namespace renderer {
-namespace states {
+namespace state {
 
 struct StencilState
 {
 };
 
-} // - namespace states
+} // - namespace state
 } // - namespace renderer
 } // - namespace noo
 
 
-#endif /* NOO_RENDERER_STATES_STENCILSTATE_HPP_INCLUDED */
+#endif /* NOO_RENDERER_STATE_STENCILSTATE_HPP_INCLUDED */
 

@@ -19,7 +19,7 @@ add_executable( ${EXENAME} ${SOURCES} )
 target_link_libraries( ${EXENAME} glfw3 GL GLU GLEW dl Xinerama Xcursor X11 Xi Xxf86vm Xrandr pthread )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../lib/glm/ )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/renderer/ )
+#include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/renderer/ )
 
 add_custom_target( ${EXENAME}.res
                    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/resources/ ${CMAKE_BINARY_DIR}/resources/

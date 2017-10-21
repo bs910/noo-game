@@ -44,14 +44,22 @@ public:
         DEPTH_STENCIL_ATTACHMENT
     };
 
+    int
+    getWidth() const
+    { return m_Width; }
+
+    int
+    getHeight() const
+    { return m_Height; }
+
     void
-    activate()
+    activate() const
     {
         glBindFramebuffer( GL_FRAMEBUFFER, m_FBOHandle );
     }
 
     void
-    deactivate()
+    deactivate() const
     {
         glBindFramebuffer( GL_FRAMEBUFFER, 0 );
     }
@@ -87,26 +95,21 @@ public:
         glDeleteFramebuffers( 1, &m_FBOHandle );
     }
 
-    static RenderTarget &
-    Default()
-    {
-        static RenderTarget defaultRT = RenderTarget( _def );
-        return defaultRT;
-    }
-
 protected:
 
-    enum def{ _def };
-
-    RenderTarget( def )
+    RenderTarget( int width, int height )
         : m_FBOHandle( 0 )
-    { }
-
-    RenderTarget()
-        : m_FBOHandle( 0 )
+        , m_Width( width )
+        , m_Height( height )
     {
         glGenFramebuffers( 1, &m_FBOHandle );
     }
+
+    RenderTarget( int width, int height, int handle )
+        : m_FBOHandle( handle )
+        , m_Width( width )
+        , m_Height( height )
+    { }
 
 private:
 
@@ -136,6 +139,8 @@ private:
     }
 
     GLuint m_FBOHandle;
+    int m_Width;
+    int m_Height;
 };
 
 } // - namespace renderer

@@ -5,8 +5,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef NOO_RENDERER_STATES_STATESET_HPP_INCLUDED
-#define NOO_RENDERER_STATES_STATESET_HPP_INCLUDED
+#ifndef NOO_RENDERER_STATE_STATESET_HPP_INCLUDED
+#define NOO_RENDERER_STATE_STATESET_HPP_INCLUDED
 
 
 /// Includes
@@ -20,22 +20,22 @@
 
 namespace noo {
 namespace renderer {
-namespace states {
+namespace state {
 
 struct StateSet
 {
     BlendState blend;
     CullState cull;
     DepthState depth;
-    RasterizerState rasterizer;
+    //RasterizerState rasterizer;
     StencilState stencil;
     ViewportState viewport;
 };
 
-} // - namespace states
+} // - namespace state
 } // - namespace renderer
 } // - namespace noo
 
 
-#endif /* NOO_RENDERER_STATES_STATESET_HPP_INCLUDED */
+#endif /* NOO_RENDERER_STATE_STATESET_HPP_INCLUDED */
 

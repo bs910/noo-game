@@ -23,6 +23,13 @@
 namespace noo {
 namespace renderer {
 
+enum class ETextureFormat
+{
+    RGB,
+    RGBA,
+    DEPTH_24_STENCIL_8
+};
+
 class Texture2D
 {
     friend class Renderer;
@@ -55,16 +62,48 @@ public:
 
 protected:
 
-    Texture2D( uint32_t w, uint32_t h, void const * data )
+    Texture2D( uint32_t w, uint32_t h, ETextureFormat format, void const * data )
         : m_Width( w )
         , m_Height( h )
+        , Format( format )
     {
         glGenTextures( 1, &m_TextureHandle );
         glBindTexture( GL_TEXTURE_2D, m_TextureHandle );
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+        glTexImage2D( GL_TEXTURE_2D, 0, toGLInternalFormat( format ), w, h, 0, toGLFormat( format ), toGLType( format ), data );
         glBindTexture( GL_TEXTURE_2D, 0 );
+    }
+
+    static GLint
+    toGLInternalFormat( ETextureFormat f )
+    {
+        switch ( f )
+        {
+            case ETextureFormat::RGB: return GL_RGB;
+            case ETextureFormat::RGBA: return GL_RGBA;
+            case ETextureFormat::DEPTH_24_STENCIL_8: return GL_DEPTH24_STENCIL8;
+        }
+    }
+
+    static GLenum
+    toGLFormat( ETextureFormat f )
+    {
+        switch ( f )
+        {
+            case ETextureFormat::RGB: return GL_RGB;
+            case ETextureFormat::RGBA: return GL_RGBA;
+            case ETextureFormat::DEPTH_24_STENCIL_8: return GL_DEPTH_STENCIL;
+        }
+    }
+
+    static GLenum
+    toGLType( ETextureFormat f )
+    {
+        switch ( f )
+        {
+            case ETextureFormat::RGB:
+            case ETextureFormat::RGBA: return GL_UNSIGNED_BYTE;
+            case ETextureFormat::DEPTH_24_STENCIL_8: return GL_UNSIGNED_INT_24_8;
+        }
     }
 
 private:
@@ -72,6 +111,7 @@ private:
     GLuint m_TextureHandle;
     uint32_t m_Width;
     uint32_t m_Height;
+    ETextureFormat Format;
 };
 
 } // - namespace renderer

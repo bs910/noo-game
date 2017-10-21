@@ -9,7 +9,7 @@
 #define NOO_RENDERER_VERTEXBUFFER_HPP_INCLUDED
 
 #include <vector>
-#include <glad/glad.h>
+#include "glad/glad.h"
 
 
 namespace noo {

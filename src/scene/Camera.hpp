@@ -43,8 +43,8 @@ public:
         , m_Up( 0, 1, 0 )
         , m_FOVY( 45.0f )
         , m_AspectRatio( 1.0f )
-        , m_NearDistance( 0.01f )
-        , m_FarDistance( 100.0f )
+        , m_NearDistance( 0.1f )
+        , m_FarDistance( 10.0f )
     { }
 
     Camera( glm::vec3 pos, glm::vec3 dir, glm::vec3 up, float fovy, float aspect, float zNear, float zFar )
@@ -147,6 +147,10 @@ public:
         glm::vec3 right = glm::cross( m_Direction, m_Up );
         m_Up = glm::cross( right, m_Direction );
     }
+
+    void
+    lookAt( float x, float y, float z )
+        { lookAt( { x, y, z } ); }
 
 private:
 

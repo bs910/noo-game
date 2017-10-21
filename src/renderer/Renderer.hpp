@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "Shader.hpp"
+#include "states/StateSet.hpp"
 #include "Texture2D.hpp"
 #include "RenderBuffer.hpp"
 #include "VertexBuffer.hpp"
@@ -22,7 +23,7 @@ class Renderer
 public:
 
     void
-    initialize();
+    initialize( int width, int height );
 
     void
     destroy();
@@ -30,7 +31,7 @@ public:
     /// @brief Clear the color, depth and stencil buffer.
     /// @param clearColor The color to clear the color buffer with.
     void
-    clear( RenderTarget & rt, glm::vec4 const & clearColor, float clearDepth = 1.0f, int clearStencil = 0 );
+    clear( RenderTarget const & rt, glm::vec4 const & clearColor, float clearDepth = 1.0f, int clearStencil = 0 );
 
 
     /// @brief Create a new shader from the given source. Vertex and fragment stages are mandatory.
@@ -68,15 +69,21 @@ public:
     }
 
     std::unique_ptr< Texture2D >
-    createTexture2D( uint32_t w, uint32_t h, void const * data = nullptr )
+    createTexture2D( uint32_t w, uint32_t h, ETextureFormat format, void const * data = nullptr )
     {
-        return std::unique_ptr< Texture2D >( new Texture2D( w, h, data ) );
+        return std::unique_ptr< Texture2D >( new Texture2D( w, h, format, data ) );
     }
 
     std::unique_ptr< RenderTarget >
-    createRenderTarget()
+    createRenderTarget( int width, int height )
     {
-        return std::unique_ptr< RenderTarget >( new RenderTarget );
+        return std::unique_ptr< RenderTarget >( new RenderTarget( width, height ) );
+    }
+
+    RenderTarget const &
+    defaultRenderTarget() const
+    {
+        return *m_DefaultRenderTarget;
     }
 
     std::unique_ptr< RenderBuffer >
@@ -86,12 +93,64 @@ public:
     }
 
     void
-    draw( RenderTarget & rt, Shader::Data & shd, Geometry & geo )
+    draw( RenderTarget const & rt, Shader::Data & shd, state::StateSet & state, Geometry & geo )
     {
+        // apply states
+        // blend
+        if ( state.blend.Enabled == state::EBlendEnable::ENABLE )
+        {
+            glEnable( GL_BLEND );
+            glBlendFunc( toGLBlendFunc( state.blend.SourceBlendFunc ), toGLBlendFunc( state.blend.DestBlendFunc ) );
+            glBlendEquation( toGLBlendEq( state.blend.BlendEq ) );
+        }
+        else
+        {
+            glDisable( GL_BLEND );
+        }
+
+        // cull
+        if ( state.cull.CullMode == state::ECullMode::NONE )
+        {
+            glDisable( GL_CULL_FACE );
+        }
+        else
+        {
+            glEnable( GL_CULL_FACE );
+            glCullFace( toGLCullMode( state.cull.CullMode ) );
+            glFrontFace( toGLFrontFace( state.cull.FrontFaceWinding ) );
+        }
+
+        // depth
+        if ( state.depth.EnableDepthTesting == state::EEnableDepthTest::ENABLE )
+        {
+            glEnable( GL_DEPTH_TEST );
+        }
+        else
+        {
+            glDisable( GL_DEPTH_TEST );
+        }
+
+        glDepthMask( state.depth.EnableDepthWriting == state::EEnableDepthWrite::ENABLE ? GL_TRUE : GL_FALSE );
+        glDepthFunc( toGLDepthFunc( state.depth.CompareFunc ) );
+
+        // stencil
+        // ... TODO
+
+        // viewport
+        if ( state.viewport.isDefault() )
+        {
+            glViewport( 0, 0, rt.getWidth(), rt.getHeight() );
+        }
+        else
+        {
+            glViewport( state.viewport.X, state.viewport.Y, state.viewport.Width, state.viewport.Height );
+        }
+
         rt.activate();
 
         shd.getShader().activate();
 
+        // TODO: texture unit manager ?
         int currentTexSlot = 0;
 
         for ( auto const & u : shd.getUniformData() )
@@ -137,6 +196,83 @@ public:
             glDrawArrays( GL_TRIANGLES, 0, geo.NumPrimitives * 3 );
         }
     }
+
+private:
+
+    static GLenum
+    toGLBlendFunc( state::EBlendFunc b )
+    {
+        switch ( b )
+        {
+            case state::EBlendFunc::ZERO: return GL_ZERO;
+            case state::EBlendFunc::ONE: return GL_ONE;
+            case state::EBlendFunc::SRC_COLOR: return GL_SRC_COLOR;
+            case state::EBlendFunc::DST_COLOR: return GL_DST_COLOR;
+            case state::EBlendFunc::ONE_MINUS_SRC_COLOR: return GL_ONE_MINUS_SRC_COLOR;
+            case state::EBlendFunc::ONE_MINUS_DST_COLOR: return GL_ONE_MINUS_DST_COLOR;
+            case state::EBlendFunc::SRC_ALPHA: return GL_SRC_ALPHA;
+            case state::EBlendFunc::DST_ALPHA: return GL_DST_ALPHA;
+            case state::EBlendFunc::ONE_MINUS_SRC_ALPHA: return GL_ONE_MINUS_SRC_ALPHA;
+            case state::EBlendFunc::ONE_MINUS_DST_ALPHA: return GL_ONE_MINUS_DST_ALPHA;
+        }
+    }
+
+    static GLenum
+    toGLBlendEq( state::EBlendEquation e )
+    {
+        switch ( e )
+        {
+            case state::EBlendEquation::ADD: return GL_FUNC_ADD;
+            case state::EBlendEquation::SUBTRACT: return GL_FUNC_SUBTRACT;
+            case state::EBlendEquation::REVERSE_SUBTRACT: return GL_FUNC_REVERSE_SUBTRACT;
+            case state::EBlendEquation::MIN: return GL_MIN;
+            case state::EBlendEquation::MAX: return GL_MAX;
+        }
+    }
+
+    static GLenum
+    toGLCullMode( state::ECullMode c )
+    {
+        switch ( c )
+        {
+            case state::ECullMode::FRONT: return GL_FRONT;
+            case state::ECullMode::BACK: return GL_BACK;
+            case state::ECullMode::BOTH: return GL_FRONT_AND_BACK;
+
+            // should be handled earlier
+            case state::ECullMode::NONE: return GL_BACK;
+        }
+    }
+
+    static GLenum
+    toGLFrontFace( state::EFrontFaceWinding f )
+    {
+        switch ( f )
+        {
+            case state::EFrontFaceWinding::CW: return GL_CW;
+            case state::EFrontFaceWinding::CCW: return GL_CCW;
+        }
+    }
+
+    static GLenum
+    toGLDepthFunc( state::EDepthFunc f )
+    {
+        switch ( f )
+        {
+            case state::EDepthFunc::ALWAYS: return GL_ALWAYS;
+            case state::EDepthFunc::NEVER: return GL_NEVER;
+            case state::EDepthFunc::LESS: return GL_LESS;
+            case state::EDepthFunc::EQUAL: return GL_EQUAL;
+            case state::EDepthFunc::LESS_EQUAL: return GL_LEQUAL;
+            case state::EDepthFunc::GREATER: return GL_GREATER;
+            case state::EDepthFunc::NOT_EQUAL: return GL_NOTEQUAL;
+            case state::EDepthFunc::GREATER_EQUAL: return GL_GEQUAL;
+        }
+    }
+
+private:
+
+    std::shared_ptr< RenderTarget > m_DefaultRenderTarget;
 };
 
 } // - namespace renderer

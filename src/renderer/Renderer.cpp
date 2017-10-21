@@ -9,8 +9,9 @@ namespace noo {
 namespace renderer {
 
 
-void Renderer::initialize()
+void Renderer::initialize( int width, int height )
 {
+    m_DefaultRenderTarget.reset( new RenderTarget( width, height, 0 ) );
     noolog::info( "Initialized Renderer." );
 }
 
@@ -21,8 +22,9 @@ void Renderer::destroy()
 }
 
 
-void Renderer::clear( RenderTarget & rt, glm::vec4 const & clearColor, float clearDepth, int clearStencil )
+void Renderer::clear( RenderTarget const & rt, glm::vec4 const & clearColor, float clearDepth, int clearStencil )
 {
+    glViewport( 0, 0, rt.getWidth(), rt.getHeight() );
     rt.activate();
     glClearColor( clearColor.r, clearColor.g, clearColor.b, clearColor.a );
     glClearDepth( clearDepth );
