@@ -16,8 +16,29 @@ namespace noo {
 namespace renderer {
 namespace state {
 
+enum class EPolygonFillMode
+{
+    SOLID,
+    LINE
+};
+
 struct RasterizerState
 {
+    EPolygonFillMode FillMode;
+
+    RasterizerState()
+        : FillMode( EPolygonFillMode::SOLID )
+    { }
+
+    RasterizerState( EPolygonFillMode fillMode )
+        : FillMode( fillMode )
+    { }
+
+    static RasterizerState
+    Wireframe()
+    {
+        return { EPolygonFillMode::LINE };
+    }
 };
 
 } // - namespace state

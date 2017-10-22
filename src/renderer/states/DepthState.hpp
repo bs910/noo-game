@@ -58,6 +58,12 @@ struct DepthState
         , EnableDepthWriting( dw )
         , CompareFunc( comp )
     { }
+
+    static DepthState
+    Disabled()
+    {
+        return { EEnableDepthTest::DISABLE, EEnableDepthWrite::DISABLE, EDepthFunc::ALWAYS };
+    }
 };
 
 } // - namespace state

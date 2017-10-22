@@ -13,11 +13,15 @@ void Renderer::initialize( int width, int height )
 {
     m_DefaultRenderTarget.reset( new RenderTarget( width, height, 0 ) );
     noolog::info( "Initialized Renderer." );
+
+    glGenVertexArrays( 1, &m_DefaultVAO );
+    glBindVertexArray( m_DefaultVAO );
 }
 
 
 void Renderer::destroy()
 {
+    glDeleteVertexArrays( 1, &m_DefaultVAO );
     noolog::info( "Destroyed Renderer." );
 }
 

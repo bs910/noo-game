@@ -27,7 +27,7 @@ struct StateSet
     BlendState blend;
     CullState cull;
     DepthState depth;
-    //RasterizerState rasterizer;
+    RasterizerState rasterizer;
     StencilState stencil;
     ViewportState viewport;
 };

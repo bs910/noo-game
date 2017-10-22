@@ -53,19 +53,19 @@ public:
         float deltaTheta = glm::pi< float >() * 2.0f / static_cast< float >( numSlices );
         float deltaPhi   = glm::pi< float >() / static_cast< float >( numStacks );
 
-        for ( size_t stack = 0; stack < numStacks; ++stack )
+        for ( size_t stack = 0; stack <= numStacks; ++stack )
         {
             for ( size_t slice = 0; slice < numSlices; ++slice )
             {
-                float x = cos( deltaTheta * slice ) * sin( deltaPhi * stack );
-                float y = sin( deltaTheta * slice ) * sin( deltaPhi * stack );
-                float z = cos( deltaPhi * stack );
+                float x = std::cos( deltaTheta * slice ) * std::sin( deltaPhi * stack );
+                float y = std::sin( deltaTheta * slice ) * std::sin( deltaPhi * stack );
+                float z = std::cos( deltaPhi * stack );
 
                 vertexPositions.emplace_back( glm::vec3{ x, y, z } );
             }
         }
 
-        for ( size_t st = 0; st < numStacks - 1; ++st )
+        for ( size_t st = 0; st < numStacks; ++st )
         {
             for ( size_t sl = 0; sl < numSlices; ++sl )
             {

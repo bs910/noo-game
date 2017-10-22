@@ -124,17 +124,26 @@ public:
         if ( state.depth.EnableDepthTesting == state::EEnableDepthTest::ENABLE )
         {
             glEnable( GL_DEPTH_TEST );
+            glDepthMask( state.depth.EnableDepthWriting == state::EEnableDepthWrite::ENABLE ? GL_TRUE : GL_FALSE );
+            glDepthFunc( toGLDepthFunc( state.depth.CompareFunc ) );
         }
         else
         {
             glDisable( GL_DEPTH_TEST );
         }
 
-        glDepthMask( state.depth.EnableDepthWriting == state::EEnableDepthWrite::ENABLE ? GL_TRUE : GL_FALSE );
-        glDepthFunc( toGLDepthFunc( state.depth.CompareFunc ) );
-
         // stencil
         // ... TODO
+
+        // rasterizer
+        if ( state.rasterizer.FillMode == state::EPolygonFillMode::LINE )
+        {
+            glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+        }
+        else
+        {
+            glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+        }
 
         // viewport
         if ( state.viewport.isDefault() )
@@ -189,7 +198,7 @@ public:
         if ( geo.IsIndexed() )
         {
             geo.Indices->activate();
-            glDrawElements( GL_TRIANGLES, geo.NumPrimitives, GL_UNSIGNED_INT, NULL );
+            glDrawElements( GL_TRIANGLES, geo.NumPrimitives * 3, GL_UNSIGNED_INT, NULL );
         }
         else
         {
@@ -273,6 +282,8 @@ private:
 private:
 
     std::shared_ptr< RenderTarget > m_DefaultRenderTarget;
+
+    GLuint m_DefaultVAO;
 };
 
 } // - namespace renderer

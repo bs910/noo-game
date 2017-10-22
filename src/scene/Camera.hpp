@@ -41,16 +41,18 @@ public:
         : m_Position( 0, 0, 0 )
         , m_Direction( 0, 0, -1 )
         , m_Up( 0, 1, 0 )
+        , m_EyeDistance( 0.0f )
         , m_FOVY( 45.0f )
         , m_AspectRatio( 1.0f )
         , m_NearDistance( 0.1f )
         , m_FarDistance( 10.0f )
     { }
 
-    Camera( glm::vec3 pos, glm::vec3 dir, glm::vec3 up, float fovy, float aspect, float zNear, float zFar )
+    Camera( glm::vec3 pos, glm::vec3 dir, glm::vec3 up, float eyeDist, float fovy, float aspect, float zNear, float zFar )
         : m_Position( pos )
         , m_Direction( dir )
         , m_Up( up )
+        , m_EyeDistance( eyeDist )
         , m_FOVY( fovy )
         , m_AspectRatio( aspect )
         , m_NearDistance( zNear )
@@ -99,6 +101,10 @@ public:
     getUp() const
         { return m_Up; }
 
+    glm::vec3
+    getRight() const
+        { return glm::cross( m_Direction, m_Up ); }
+
     void
     setUp( glm::vec3 const & up )
         { m_Up = up; }
@@ -146,17 +152,25 @@ public:
         m_Direction = glm::normalize( focusPoint - m_Position );
         glm::vec3 right = glm::cross( m_Direction, m_Up );
         m_Up = glm::cross( right, m_Direction );
+
+        m_EyeDistance = glm::distance( focusPoint, m_Position );
     }
 
     void
     lookAt( float x, float y, float z )
         { lookAt( { x, y, z } ); }
 
+    float
+    getEyeDistance() const
+        { return m_EyeDistance; }
+
 private:
 
     glm::vec3 m_Position;
     glm::vec3 m_Direction;
     glm::vec3 m_Up;
+
+    float m_EyeDistance;
 
     float m_FOVY;
     float m_AspectRatio;

@@ -131,6 +131,26 @@ struct Vertex_Pos3Tex2
     }
 };
 
+
+struct Vertex_Pos3Nrm3
+{
+    float x, y, z;
+    float nx, ny, nz;
+
+    static constexpr int SizeInBytes = sizeof( float ) * ( 3 + 3 );
+
+    static VertexDescription const &
+    VertexDesc()
+    {
+        static VertexDescription vd{ { { EVertexComponentType::FLOAT_3, 0 }
+                                     , { EVertexComponentType::FLOAT_3, 3 * sizeof( float ) } }
+                                   , SizeInBytes };
+
+        return vd;
+    }
+};
+
+
 } // - namespace renderer
 } // - namespace noo
 
