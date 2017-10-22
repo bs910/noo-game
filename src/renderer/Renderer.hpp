@@ -139,6 +139,7 @@ public:
         if ( state.rasterizer.FillMode == state::EPolygonFillMode::LINE )
         {
             glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+            glLineWidth( state.rasterizer.LineWidth );
         }
         else
         {
@@ -165,7 +166,9 @@ public:
         for ( auto const & u : shd.getUniformData() )
         {
             if ( ! u.isTextureSampler() )
+            {
                 u.apply();
+            }
             else
             {
                 TextureSampler ts = *reinterpret_cast< TextureSampler* >( u.Data );
@@ -281,8 +284,10 @@ private:
 
 private:
 
+    /// @brief The window surface back buffer.
     std::shared_ptr< RenderTarget > m_DefaultRenderTarget;
 
+    /// @brief In OpenGL 4 core profile a vertex array object has to be used.
     GLuint m_DefaultVAO;
 };
 

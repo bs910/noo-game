@@ -15,8 +15,13 @@
 /// Includes
 #include <cstdint>
 #include <vector>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
+
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 /// Using declarations
 
@@ -28,6 +33,54 @@ namespace geometry {
 class GeometryUtils
 {
 public:
+
+
+    static bool
+    loadMeshFromFile( std::string const & filename
+                    , std::vector< glm::vec3 > & outPositions
+                    , std::vector< glm::vec3 > & outNormals
+                    , std::vector< uint32_t >  & outIndices )
+    {
+        Assimp::Importer importer;
+        aiScene const * ai_scene = importer.ReadFile( filename.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals );
+
+        if ( nullptr == ai_scene )
+        {
+            /* fail */
+            return false;
+        }
+
+        for ( int m = 0; m < ai_scene->mNumMeshes; ++m )
+        {
+            aiMesh * mesh = ai_scene->mMeshes[ m ];
+
+            for ( int v = 0; v < mesh->mNumVertices; ++v )
+            {
+                aiVector3D p = mesh->mVertices[ v ];
+                aiVector3D n = mesh->mNormals[ v ];
+
+                outPositions.emplace_back( p.x, p.y, p.z );
+                outNormals.emplace_back( n.x, n.y, n.z );
+            }
+
+            for ( int f = 0; f < mesh->mNumFaces; ++f )
+            {
+                aiFace & face = mesh->mFaces[ f ];
+
+                assert( face.mNumIndices == 3 );
+
+                int i0 = face.mIndices[ 0 ];
+                int i1 = face.mIndices[ 1 ];
+                int i2 = face.mIndices[ 2 ];
+
+                outIndices.push_back( i0 );
+                outIndices.push_back( i1 );
+                outIndices.push_back( i2 );
+            }
+        }
+
+        return true;
+    }
 
     /*static void
     createSphere( size_t numStacks, size_t numSlices

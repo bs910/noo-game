@@ -25,19 +25,22 @@ enum class EPolygonFillMode
 struct RasterizerState
 {
     EPolygonFillMode FillMode;
+    float LineWidth;
 
     RasterizerState()
         : FillMode( EPolygonFillMode::SOLID )
+        , LineWidth( 1.0f )
     { }
 
-    RasterizerState( EPolygonFillMode fillMode )
+    RasterizerState( EPolygonFillMode fillMode, float lineWidth )
         : FillMode( fillMode )
+        , LineWidth( lineWidth )
     { }
 
     static RasterizerState
     Wireframe()
     {
-        return { EPolygonFillMode::LINE };
+        return { EPolygonFillMode::LINE, 2.0f };
     }
 };
 

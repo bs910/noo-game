@@ -45,9 +45,16 @@ public:
 
     enum class Key
     {
+        KEY_0,
         KEY_1,
         KEY_2,
         KEY_3,
+        KEY_4,
+        KEY_5,
+        KEY_6,
+        KEY_7,
+        KEY_8,
+        KEY_9,
         KEY_W
     };
 
@@ -100,9 +107,16 @@ public:
     {
         switch ( k )
         {
+            case Key::KEY_0: return "KEY_0";
             case Key::KEY_1: return "KEY_1";
             case Key::KEY_2: return "KEY_2";
             case Key::KEY_3: return "KEY_3";
+            case Key::KEY_4: return "KEY_4";
+            case Key::KEY_5: return "KEY_5";
+            case Key::KEY_6: return "KEY_6";
+            case Key::KEY_7: return "KEY_7";
+            case Key::KEY_8: return "KEY_8";
+            case Key::KEY_9: return "KEY_9";
             case Key::KEY_W: return "KEY_W";
         }
     }
@@ -259,6 +273,9 @@ public:
         if ( key == InputHandler::Key::KEY_3 && action == InputHandler::KeyAction::PRESS )
             State = 3;
 
+        if ( key == InputHandler::Key::KEY_4 && action == InputHandler::KeyAction::PRESS )
+            State = 4;
+
         if ( key == InputHandler::Key::KEY_W && action == InputHandler::KeyAction::PRESS )
             Wireframe = !Wireframe;
     }
@@ -273,9 +290,16 @@ static void keyCallback( GLFWwindow * window, int key, int /* scancode */, int a
 {
     InputHandler & input = *static_cast< InputHandler * >( glfwGetWindowUserPointer( window ) );
 
-    static std::map< int, InputHandler::Key > glfw2nooKey = { { GLFW_KEY_1, InputHandler::Key::KEY_1 }
+    static std::map< int, InputHandler::Key > glfw2nooKey = { { GLFW_KEY_0, InputHandler::Key::KEY_0 }
+                                                            , { GLFW_KEY_1, InputHandler::Key::KEY_1 }
                                                             , { GLFW_KEY_2, InputHandler::Key::KEY_2 }
                                                             , { GLFW_KEY_3, InputHandler::Key::KEY_3 }
+                                                            , { GLFW_KEY_4, InputHandler::Key::KEY_4 }
+                                                            , { GLFW_KEY_5, InputHandler::Key::KEY_5 }
+                                                            , { GLFW_KEY_6, InputHandler::Key::KEY_6 }
+                                                            , { GLFW_KEY_7, InputHandler::Key::KEY_7 }
+                                                            , { GLFW_KEY_8, InputHandler::Key::KEY_8 }
+                                                            , { GLFW_KEY_9, InputHandler::Key::KEY_9 }
                                                             , { GLFW_KEY_W, InputHandler::Key::KEY_W } };
 
     static std::map< int, InputHandler::KeyAction > glfw2nooAction = { { GLFW_PRESS, InputHandler::KeyAction::PRESS }
@@ -490,6 +514,44 @@ int main( int /* argc */, char ** /* argv */ )
     geoSphere.NumPrimitives = sphere_idx.size() / 3;
     geoSphere.VertexFormat = noo::renderer::Vertex_Pos3Nrm3::VertexDesc();
 
+
+    std::string const meshFilename = "/home/ben/torus.obj";
+    std::vector< glm::vec3 > meshPos;
+    std::vector< glm::vec3 > meshNrm;
+    std::vector< uint32_t > meshInd;
+    bool mesh_loaded = noo::geometry::GeometryUtils::loadMeshFromFile( meshFilename, meshPos, meshNrm, meshInd );
+
+    if ( mesh_loaded )
+    {
+        noolog::info( "Mesh " + meshFilename + " successfully loaded." );
+    }
+    else
+    {
+        noolog::error( "Mesh " + meshFilename + " couldn't be loaded." );
+    }
+
+    std::vector< noo::renderer::Vertex_Pos3Nrm3 > vMesh;
+
+    for ( int i = 0; i < meshPos.size(); ++i )
+    {
+        glm::vec3 p = meshPos[ i ];
+        glm::vec3 n = meshNrm[ i ];
+
+        vMesh.push_back( { p.x, p.y, p.z, n.x, n.y, n.z } );
+    }
+
+    auto vbo_mesh = renderer.createVertexBuffer();
+    vbo_mesh->upload( vMesh.size() * noo::renderer::Vertex_Pos3Nrm3::SizeInBytes, vMesh.data() );
+
+    auto ibo_mesh = renderer.createIndexBuffer();
+    ibo_mesh->upload( meshInd.size() * sizeof( uint32_t ), meshInd.data() );
+
+    noo::renderer::Geometry geoMesh;
+    geoMesh.Vertices = vbo_mesh.get();
+    geoMesh.Indices = ibo_mesh.get();
+    geoMesh.NumPrimitives = meshInd.size() / 3;
+    geoMesh.VertexFormat = noo::renderer::Vertex_Pos3Nrm3::VertexDesc();
+
     using noo::renderer::EWrapMode;
     using noo::renderer::EMinFilterMode;
     using noo::renderer::EMagFilterMode;
@@ -503,31 +565,47 @@ int main( int /* argc */, char ** /* argv */ )
 
         // pre-pass - render to texture
         {
-            StateSet stateSet;
-            stateSet.depth = noo::renderer::state::DepthState::Disabled();
-
-            if ( rms.Wireframe ) stateSet.rasterizer = noo::renderer::state::RasterizerState::Wireframe();
-
             renderer.clear( *rt, clrColor, 1.0f, 0 );
 
+            if ( rms.State == 4 && mesh_loaded )
             {
-                // render a lit sphere
-                stateSet.cull.FrontFaceWinding = noo::renderer::state::EFrontFaceWinding::CW;
+                StateSet stateSet;
+
+                if ( rms.Wireframe ) stateSet.rasterizer = noo::renderer::state::RasterizerState::Wireframe();
 
                 shdLit[ "u_mvp" ] = cam.getViewProjectionMatrix();
-                shdLit[ "u_color" ] = glm::vec3( 0.5, 0.5, 1.0 );
-                shdLit[ "u_light_dir" ] = glm::normalize( glm::vec3( 1, 1, 1 ) );
+                shdLit[ "u_color" ] = glm::vec3{ 0, 0, 1 };
+                shdLit[ "u_light_dir" ] = glm::normalize( glm::vec3{ 1, 1, 1 } );
 
-                renderer.draw( *rt, shdLit, stateSet, geoSphere );
+                renderer.draw( *rt, shdLit, stateSet, geoMesh );
             }
-
+            else
             {
-                stateSet.cull = noo::renderer::state::CullState::Disabled();
+                {
+                    // render a lit sphere
+                    StateSet stateSet;
+                    stateSet.depth = noo::renderer::state::DepthState::Disabled();
+                    stateSet.cull.FrontFaceWinding = noo::renderer::state::EFrontFaceWinding::CW;
+                    if ( rms.Wireframe ) stateSet.rasterizer = noo::renderer::state::RasterizerState::Wireframe();
 
-                shdSolid[ "u_mvp" ] = cam.getViewProjectionMatrix();
-                shdSolid[ "u_color" ] = glm::vec4( 1, 1, 1, 1 );
+                    shdLit[ "u_mvp" ] = cam.getViewProjectionMatrix();
+                    shdLit[ "u_color" ] = glm::vec3( 0.5, 0.5, 1.0 );
+                    shdLit[ "u_light_dir" ] = glm::normalize( glm::vec3( 1, 1, 1 ) );
 
-                renderer.draw( *rt, shdSolid, stateSet, geoTri );
+                    renderer.draw( *rt, shdLit, stateSet, geoSphere );
+                }
+
+                {
+                    StateSet stateSet;
+                    stateSet.depth = noo::renderer::state::DepthState::Disabled();
+                    stateSet.cull = noo::renderer::state::CullState::Disabled();
+                    if ( rms.Wireframe ) stateSet.rasterizer = noo::renderer::state::RasterizerState::Wireframe();
+
+                    shdSolid[ "u_mvp" ] = cam.getViewProjectionMatrix();
+                    shdSolid[ "u_color" ] = glm::vec4( 1, 1, 1, 1 );
+
+                    renderer.draw( *rt, shdSolid, stateSet, geoTri );
+                }
             }
         }
 
@@ -540,7 +618,7 @@ int main( int /* argc */, char ** /* argv */ )
             {
                 shdTex[ "u_mvp" ] = glm::mat4();
 
-                if ( rms.State == 1 )
+                if ( rms.State == 1 || rms.State == 4 )
                     shdTex[ "s2D_tex" ] = noo::renderer::TextureSampler{ rt_color.get(), EWrapMode::REPEAT, EWrapMode::REPEAT, EMinFilterMode::NEAREST, EMagFilterMode::NEAREST };
                 else if ( rms.State == 2 )
                     shdTex[ "s2D_tex" ] = noo::renderer::TextureSampler{ rt_depth.get(), EWrapMode::REPEAT, EWrapMode::REPEAT, EMinFilterMode::LINEAR, EMagFilterMode::LINEAR };
