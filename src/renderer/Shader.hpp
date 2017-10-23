@@ -61,6 +61,7 @@ struct UniformData
             case GL_FLOAT_VEC2: SizeOfData = sizeof( glm::vec2 ); break;
             case GL_FLOAT_VEC3: SizeOfData = sizeof( glm::vec3 ); break;
             case GL_FLOAT_VEC4: SizeOfData = sizeof( glm::vec4 ); break;
+            case GL_FLOAT_MAT3: SizeOfData = sizeof( glm::mat3 ); break;
             case GL_FLOAT_MAT4: SizeOfData = sizeof( glm::mat4 ); break;
 
             case GL_SAMPLER_1D:
@@ -157,6 +158,12 @@ struct UniformData
         return *this;
     }
 
+    UniformData & operator=( glm::mat3 const & mat )
+    {
+        memcpy( Data, glm::value_ptr( mat ), sizeof( glm::mat3 ) );
+        return *this;
+    }
+
     UniformData & operator=( glm::mat4 const & mat )
     {
         memcpy( Data, glm::value_ptr( mat ), sizeof( glm::mat4 ) );
@@ -184,6 +191,7 @@ struct UniformData
             case GL_FLOAT_VEC3: glUniform3fv( Location, 1, reinterpret_cast< GLfloat* >( Data ) ); break;
             case GL_FLOAT_VEC4: glUniform4fv( Location, 1, reinterpret_cast< GLfloat* >( Data ) ); break;
 
+            case GL_FLOAT_MAT3: glUniformMatrix3fv( Location, 1, GL_FALSE, reinterpret_cast< GLfloat* >( Data ) ); break;
             case GL_FLOAT_MAT4: glUniformMatrix4fv( Location, 1, GL_FALSE, reinterpret_cast< GLfloat* >( Data ) ); break;
 
             default: assert( false && "Uniform data type not supported or tried to apply a texture sampler!" );

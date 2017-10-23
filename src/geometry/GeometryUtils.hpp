@@ -15,6 +15,7 @@
 /// Includes
 #include <cstdint>
 #include <vector>
+#include <iostream>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
@@ -39,7 +40,8 @@ public:
     loadMeshFromFile( std::string const & filename
                     , std::vector< glm::vec3 > & outPositions
                     , std::vector< glm::vec3 > & outNormals
-                    , std::vector< uint32_t >  & outIndices )
+                    , std::vector< uint32_t >  & outIndices
+                    , glm::vec3 & outMaterial )
     {
         Assimp::Importer importer;
         aiScene const * ai_scene = importer.ReadFile( filename.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals );
@@ -50,9 +52,17 @@ public:
             return false;
         }
 
+        std::cout << "Num Materials: " << ai_scene->mNumMaterials << std::endl;
+
         for ( int m = 0; m < ai_scene->mNumMeshes; ++m )
         {
             aiMesh * mesh = ai_scene->mMeshes[ m ];
+            aiMaterial * mtl = ai_scene->mMaterials[ mesh->mMaterialIndex ];
+
+            aiColor3D diffuseColor{ 1, 0, 1 };
+            mtl->Get( AI_MATKEY_COLOR_DIFFUSE, diffuseColor );
+
+            outMaterial = glm::vec3{ diffuseColor.r, diffuseColor.g, diffuseColor.b };
 
             for ( int v = 0; v < mesh->mNumVertices; ++v )
             {

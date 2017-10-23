@@ -64,6 +64,18 @@ struct DepthState
     {
         return { EEnableDepthTest::DISABLE, EEnableDepthWrite::DISABLE, EDepthFunc::ALWAYS };
     }
+
+    static DepthState
+    ReadOnly()
+    {
+        return { EEnableDepthTest::ENABLE, EEnableDepthWrite::DISABLE, EDepthFunc::LESS };
+    }
+
+    static DepthState
+    WriteOnly()
+    {
+        return { EEnableDepthTest::ENABLE, EEnableDepthWrite::ENABLE, EDepthFunc::ALWAYS };
+    }
 };
 
 } // - namespace state

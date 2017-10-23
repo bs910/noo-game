@@ -40,7 +40,8 @@ constexpr std::size_t enum_index( enumeration const value ) noexcept
 }
 
 
-std::string readFile( char const * filePath )
+inline std::string
+readFile( char const * filePath )
 {
     std::string content;
     std::ifstream fileStream( filePath, std::ios::in );

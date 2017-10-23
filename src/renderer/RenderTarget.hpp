@@ -13,10 +13,15 @@
 
 
 /// Includes
-#include "../logging/Logger.hpp"
-#include "glad/glad.h"
 #include <cassert>
 #include <cstdint>
+#include <array>
+#include <vector>
+
+#include "glad/glad.h"
+
+#include "../logging/Logger.hpp"
+#include "../common/Utils.hpp"
 #include "Texture2D.hpp"
 #include "RenderBuffer.hpp"
 
@@ -27,22 +32,25 @@ using noolog = noo::logging::Logger;
 namespace noo {
 namespace renderer {
 
+enum class EAttachmentUsage : GLenum
+{
+    COLOR_ATTACHMENT0,
+    COLOR_ATTACHMENT1,
+    COLOR_ATTACHMENT2,
+    COLOR_ATTACHMENT3,
+    DEPTH_ATTACHMENT,
+    STENCIL_ATTACHMENT,
+    DEPTH_STENCIL_ATTACHMENT,
+
+    ENUM_END
+};
+
+
 class RenderTarget
 {
     friend class Renderer;
 
 public:
-
-    enum AttachmentUsage
-    {
-        COLOR_ATTACHMENT0,
-        COLOR_ATTACHMENT1,
-        COLOR_ATTACHMENT2,
-        COLOR_ATTACHMENT3,
-        DEPTH_ATTACHMENT,
-        STENCIL_ATTACHMENT,
-        DEPTH_STENCIL_ATTACHMENT
-    };
 
     int
     getWidth() const
@@ -56,6 +64,24 @@ public:
     activate() const
     {
         glBindFramebuffer( GL_FRAMEBUFFER, m_FBOHandle );
+
+        std::vector< GLenum > bufs;
+
+        for ( int i = 0; i < m_IsAttachmentPresent.size(); ++i )
+        {
+            if ( m_IsAttachmentPresent[ i ] )
+            {
+                EAttachmentUsage a = EAttachmentUsage( i );
+
+                if ( isColorAttachment( a ) )
+                {
+                    GLenum gle = toGLAttachmentType( a );
+                    bufs.push_back( gle );
+                }
+            }
+        }
+
+        if ( !bufs.empty() ) glDrawBuffers( bufs.size(), bufs.data() );
     }
 
     void
@@ -65,7 +91,7 @@ public:
     }
 
     void
-    attachTexture2D( AttachmentUsage usage, Texture2D & tex )
+    attachTexture2D( EAttachmentUsage usage, Texture2D & tex )
     {
         glBindFramebuffer( GL_FRAMEBUFFER, m_FBOHandle );
         glFramebufferTexture2D( GL_FRAMEBUFFER, toGLAttachmentType( usage ), GL_TEXTURE_2D, tex.getGLHandle(), 0 );
@@ -75,10 +101,12 @@ public:
         noolog::debug( "Attached texture successfully." );
 
         glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+        m_IsAttachmentPresent[ noo::common::enum_index( usage ) ] = true;
     }
 
     void
-    attachRenderbuffer( AttachmentUsage usage, RenderBuffer & rb )
+    attachRenderbuffer( EAttachmentUsage usage, RenderBuffer & rb )
     {
         glBindFramebuffer( GL_FRAMEBUFFER, m_FBOHandle );
         glFramebufferRenderbuffer( GL_FRAMEBUFFER, toGLAttachmentType( usage ), GL_RENDERBUFFER, rb.getHandle() );
@@ -88,6 +116,8 @@ public:
         noolog::debug( "Attached render buffer successfully." );
 
         glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+        m_IsAttachmentPresent[ noo::common::enum_index( usage ) ] = true;
     }
 
     ~RenderTarget()
@@ -114,22 +144,39 @@ protected:
 private:
 
     GLenum
-    toGLAttachmentType( AttachmentUsage a )
+    toGLAttachmentType( EAttachmentUsage a ) const
     {
         switch ( a )
         {
-            case COLOR_ATTACHMENT0 : return GL_COLOR_ATTACHMENT0;
-            case COLOR_ATTACHMENT1 : return GL_COLOR_ATTACHMENT1;
-            case COLOR_ATTACHMENT2 : return GL_COLOR_ATTACHMENT2;
-            case COLOR_ATTACHMENT3 : return GL_COLOR_ATTACHMENT3;
-            case DEPTH_ATTACHMENT  : return GL_DEPTH_ATTACHMENT;
-            case STENCIL_ATTACHMENT: return GL_STENCIL_ATTACHMENT;
-            case DEPTH_STENCIL_ATTACHMENT: return GL_DEPTH_STENCIL_ATTACHMENT;
+            case EAttachmentUsage::COLOR_ATTACHMENT0 : return GL_COLOR_ATTACHMENT0;
+            case EAttachmentUsage::COLOR_ATTACHMENT1 : return GL_COLOR_ATTACHMENT1;
+            case EAttachmentUsage::COLOR_ATTACHMENT2 : return GL_COLOR_ATTACHMENT2;
+            case EAttachmentUsage::COLOR_ATTACHMENT3 : return GL_COLOR_ATTACHMENT3;
+            case EAttachmentUsage::DEPTH_ATTACHMENT  : return GL_DEPTH_ATTACHMENT;
+            case EAttachmentUsage::STENCIL_ATTACHMENT: return GL_STENCIL_ATTACHMENT;
+            case EAttachmentUsage::DEPTH_STENCIL_ATTACHMENT: return GL_DEPTH_STENCIL_ATTACHMENT;
+            default: assert( false );
+        }
+    }
+
+    bool
+    isColorAttachment( EAttachmentUsage a ) const
+    {
+        switch ( a )
+        {
+            case EAttachmentUsage::COLOR_ATTACHMENT0 : return true;
+            case EAttachmentUsage::COLOR_ATTACHMENT1 : return true;
+            case EAttachmentUsage::COLOR_ATTACHMENT2 : return true;
+            case EAttachmentUsage::COLOR_ATTACHMENT3 : return true;
+            case EAttachmentUsage::DEPTH_ATTACHMENT  : return false;
+            case EAttachmentUsage::STENCIL_ATTACHMENT: return false;
+            case EAttachmentUsage::DEPTH_STENCIL_ATTACHMENT: return false;
+            default: assert( false );
         }
     }
 
     void
-    checkStatus()
+    checkStatus() const
     {
         if ( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
         {
@@ -141,6 +188,8 @@ private:
     GLuint m_FBOHandle;
     int m_Width;
     int m_Height;
+
+    std::array< bool, noo::common::enum_count< EAttachmentUsage >() > m_IsAttachmentPresent = { { false } };
 };
 
 } // - namespace renderer

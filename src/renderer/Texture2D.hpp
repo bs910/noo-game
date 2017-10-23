@@ -23,10 +23,33 @@
 namespace noo {
 namespace renderer {
 
-enum class ETextureFormat
+enum class EImageFormat
 {
     RGB,
     RGBA,
+    DEPTH_24_STENCIL_8
+};
+
+enum class EImagePixelType
+{
+    BYTE,
+    UBYTE,
+    SHORT,
+    USHORT,
+    INT,
+    UINT,
+    FLOAT,
+    UINT_24_8
+};
+
+enum class ETextureFormat
+{
+    RGB,
+    RGB_16F,
+    RGB_32F,
+    RGBA,
+    RGBA_16F,
+    RGBA_32F,
     DEPTH_24_STENCIL_8
 };
 
@@ -62,47 +85,55 @@ public:
 
 protected:
 
-    Texture2D( uint32_t w, uint32_t h, ETextureFormat format, void const * data )
+    Texture2D( uint32_t w, uint32_t h, ETextureFormat texFormat, void const * data, EImageFormat imgFormat, EImagePixelType pixType )
         : m_Width( w )
         , m_Height( h )
-        , Format( format )
     {
         glGenTextures( 1, &m_TextureHandle );
         glBindTexture( GL_TEXTURE_2D, m_TextureHandle );
-        glTexImage2D( GL_TEXTURE_2D, 0, toGLInternalFormat( format ), w, h, 0, toGLFormat( format ), toGLType( format ), data );
+        glTexImage2D( GL_TEXTURE_2D, 0, toGLTextureFormat( texFormat ), w, h, 0, toGLImageFormat( imgFormat ), toGLPixelType( pixType ), data );
         glBindTexture( GL_TEXTURE_2D, 0 );
     }
 
     static GLint
-    toGLInternalFormat( ETextureFormat f )
+    toGLTextureFormat( ETextureFormat f )
     {
         switch ( f )
         {
             case ETextureFormat::RGB: return GL_RGB;
+            case ETextureFormat::RGB_16F: return GL_RGB16F;
+            case ETextureFormat::RGB_32F: return GL_RGB32F;
             case ETextureFormat::RGBA: return GL_RGBA;
+            case ETextureFormat::RGBA_16F: return GL_RGBA16F;
+            case ETextureFormat::RGBA_32F: return GL_RGBA32F;
             case ETextureFormat::DEPTH_24_STENCIL_8: return GL_DEPTH24_STENCIL8;
         }
     }
 
     static GLenum
-    toGLFormat( ETextureFormat f )
+    toGLImageFormat( EImageFormat f )
     {
         switch ( f )
         {
-            case ETextureFormat::RGB: return GL_RGB;
-            case ETextureFormat::RGBA: return GL_RGBA;
-            case ETextureFormat::DEPTH_24_STENCIL_8: return GL_DEPTH_STENCIL;
+            case EImageFormat::RGB: return GL_RGB;
+            case EImageFormat::RGBA: return GL_RGBA;
+            case EImageFormat::DEPTH_24_STENCIL_8: return GL_DEPTH_STENCIL;
         }
     }
 
     static GLenum
-    toGLType( ETextureFormat f )
+    toGLPixelType( EImagePixelType f )
     {
         switch ( f )
         {
-            case ETextureFormat::RGB:
-            case ETextureFormat::RGBA: return GL_UNSIGNED_BYTE;
-            case ETextureFormat::DEPTH_24_STENCIL_8: return GL_UNSIGNED_INT_24_8;
+            case EImagePixelType::BYTE: return GL_BYTE;
+            case EImagePixelType::UBYTE: return GL_UNSIGNED_BYTE;
+            case EImagePixelType::SHORT: return GL_SHORT;
+            case EImagePixelType::USHORT: return GL_UNSIGNED_SHORT;
+            case EImagePixelType::INT: return GL_INT;
+            case EImagePixelType::UINT: return GL_UNSIGNED_INT;
+            case EImagePixelType::FLOAT: return GL_FLOAT;
+            case EImagePixelType::UINT_24_8: return GL_UNSIGNED_INT_24_8;
         }
     }
 
@@ -111,7 +142,6 @@ private:
     GLuint m_TextureHandle;
     uint32_t m_Width;
     uint32_t m_Height;
-    ETextureFormat Format;
 };
 
 } // - namespace renderer

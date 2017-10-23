@@ -69,9 +69,9 @@ public:
     }
 
     std::unique_ptr< Texture2D >
-    createTexture2D( uint32_t w, uint32_t h, ETextureFormat format, void const * data = nullptr )
+    createTexture2D( uint32_t w, uint32_t h, ETextureFormat format, void const * data, EImageFormat imgFormat, EImagePixelType pixType )
     {
-        return std::unique_ptr< Texture2D >( new Texture2D( w, h, format, data ) );
+        return std::unique_ptr< Texture2D >( new Texture2D( w, h, format, data, imgFormat, pixType ) );
     }
 
     std::unique_ptr< RenderTarget >
