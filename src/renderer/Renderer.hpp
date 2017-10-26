@@ -171,7 +171,9 @@ public:
             }
             else
             {
-                TextureSampler ts = *reinterpret_cast< TextureSampler* >( u.Data );
+                TextureSampler ts = *reinterpret_cast< TextureSampler * >( u.Data );
+
+                glUniform1i( u.Location, currentTexSlot );
 
                 ts.Texture->activate( currentTexSlot );
                 ++currentTexSlot;

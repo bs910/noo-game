@@ -31,6 +31,31 @@ enum class EWrapMode
     BORDER
 };
 
+
+enum class EMinFilterMode
+{
+    NEAREST,
+    LINEAR
+};
+
+
+enum class EMagFilterMode
+{
+    NEAREST,
+    LINEAR
+};
+
+
+struct TextureSampler
+{
+    Texture2D * Texture;
+    EWrapMode WrapS;
+    EWrapMode WrapT;
+    EMinFilterMode MinFilter;
+    EMagFilterMode MagFilter;
+};
+
+
 inline GLint
 toGLWrapMode( EWrapMode w )
 {
@@ -44,18 +69,6 @@ toGLWrapMode( EWrapMode w )
 }
 
 
-enum class EMinFilterMode
-{
-    NEAREST,
-    LINEAR
-};
-
-enum class EMagFilterMode
-{
-    NEAREST,
-    LINEAR
-};
-
 inline GLint
 toGLMinFilter( EMinFilterMode f )
 {
@@ -66,6 +79,7 @@ toGLMinFilter( EMinFilterMode f )
     }
 }
 
+
 inline GLint
 toGLMagFilter( EMagFilterMode f )
 {
@@ -75,15 +89,6 @@ toGLMagFilter( EMagFilterMode f )
         case EMagFilterMode::LINEAR : return GL_LINEAR;
     }
 }
-
-struct TextureSampler
-{
-    Texture2D * Texture;
-    EWrapMode WrapS;
-    EWrapMode WrapT;
-    EMinFilterMode MinFilter;
-    EMagFilterMode MagFilter;
-};
 
 } // - namespace renderer
 } // - namespace noo

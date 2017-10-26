@@ -382,6 +382,8 @@ protected:
             }
 
             m_Uniforms.emplace_back( loc, type, std::string( name ) );
+
+            noolog::info( "Added uniform " + std::string( name ) );
         }
 
         noolog::trace( "line " + std::to_string( __LINE__ ) + ":" + std::string( __func__ ) + " :: Created shader." );

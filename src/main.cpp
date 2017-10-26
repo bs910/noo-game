@@ -192,8 +192,8 @@ public:
     void
     onMouseMove( double x, double y ) override
     {
-        float dx = m_LastX - (float)x;
-        float dy = m_LastY - (float)y;
+        double dx = m_LastX - x;
+        double dy = m_LastY - y;
 
         if ( m_LeftMousePressed )
         {
@@ -205,8 +205,8 @@ public:
 
             glm::vec3 focus_point = p + dir * dist;
 
-            p -= r * ( dx * 0.01f );
-            p += u * ( dy * 0.01f );
+            p -= r * ( static_cast< float >( dx ) * 0.01f );
+            p += u * ( static_cast< float >( dy ) * 0.01f );
 
             float newDist = glm::distance( focus_point, p );
             p -= ( newDist - dist ) * dir;
@@ -228,7 +228,7 @@ public:
 
         glm::vec3 fp = p + dir * dist;
 
-        p += dir * (float)dy * 0.025f;
+        p += dir * static_cast< float >( dy ) * 0.025f;
 
         m_Camera.setPosition( p );
         m_Camera.lookAt( fp );
@@ -253,7 +253,7 @@ private:
 
     bool m_LeftMousePressed;
 
-    float m_LastX, m_LastY;
+    double m_LastX, m_LastY;
 };
 
 
@@ -429,9 +429,13 @@ int main( int /* argc */, char ** /* argv */ )
 
     auto shader_def_pre = renderer.createShader( def_pre_VS.c_str(), nullptr, nullptr, nullptr, def_pre_FS.c_str() );
 
+    std::string const def_light_VS = noo::common::readFile( "resources/shaders/deferred_light.vsh" );
+    std::string const def_light_FS = noo::common::readFile( "resources/shaders/deferred_light.fsh" );
+
+    auto shader_def_light = renderer.createShader( def_light_VS.c_str(), nullptr, nullptr, nullptr, def_light_FS.c_str() );
+
     noo::renderer::Shader::Data shdDefPre( *shader_def_pre );
-
-
+    noo::renderer::Shader::Data shdDefLight( *shader_def_light );
 
 
     std::vector< noo::renderer::Vertex_Pos3Color4 > vData =
@@ -585,35 +589,27 @@ int main( int /* argc */, char ** /* argv */ )
     using noo::renderer::EMagFilterMode;
     using noo::renderer::state::StateSet;
 
-    int frame = 0;
-    int border = 15;
-
     while ( ! glfwWindowShouldClose( window ) )
     {
 
         // pre-pass - render to texture
         {
-
             if ( rms.State == 4 && mesh_loaded )
             {
                 renderer.clear( *rt_def, { 0, 0, 0, 0 }, 1.0f, 0 );
 
                 StateSet stateSet;
+                if ( rms.Wireframe ) stateSet.rasterizer = noo::renderer::state::RasterizerState::Wireframe();
 
                 shdDefPre[ "u_mvp" ] = cam.getViewProjectionMatrix();
-                shdDefPre[ "u_mat_rot" ] = glm::mat3( cam.getViewMatrix() );
+                shdDefPre[ "u_mat_rot" ] = glm::mat3(); //glm::mat3( cam.getViewMatrix() );
                 shdDefPre[ "u_color" ] = meshMtl;
 
                 renderer.draw( *rt_def, shdDefPre, stateSet, geoMesh );
 
-
-                renderer.clear( *rt, clrColor, 1.0f, 0 );
-
-                shdLit[ "u_mvp" ] = cam.getViewProjectionMatrix();
-                shdLit[ "u_color" ] = meshMtl;
-                shdLit[ "u_light_dir" ] = glm::normalize( glm::vec3( 1, 1, 1 ) );
-
-                renderer.draw( *rt, shdLit, stateSet, geoMesh );
+                stateSet.cull.FrontFaceWinding = noo::renderer::state::EFrontFaceWinding::CW;
+                shdDefPre[ "u_mvp" ] = cam.getViewProjectionMatrix() * glm::scale( glm::vec3{ 0.5, 0.5, 0.5 } );
+                renderer.draw( *rt_def, shdDefPre, stateSet, geoSphere );
             }
             else
             {
@@ -675,7 +671,7 @@ int main( int /* argc */, char ** /* argv */ )
                     int w = renderer.defaultRenderTarget().getWidth();
                     int h = renderer.defaultRenderTarget().getHeight();
 
-                    stateSet.cull = noo::renderer::state::CullState::Disabled();
+                    //stateSet.cull = noo::renderer::state::CullState::Disabled();
 
                     // show the g-buffer textures
                     stateSet.viewport = noo::renderer::state::ViewportState( 0, 0, w/2, h/2 );
@@ -691,16 +687,19 @@ int main( int /* argc */, char ** /* argv */ )
                     renderer.draw( renderer.defaultRenderTarget(), shdTex, stateSet, geoQuad );
 
                     stateSet.viewport = noo::renderer::state::ViewportState( w/2, h/2, w/2, h/2 );
-                    shdTex[ "s2D_tex" ] = noo::renderer::TextureSampler{ rt_color.get(), EWrapMode::CLAMP, EWrapMode::CLAMP, EMinFilterMode::NEAREST, EMagFilterMode::NEAREST };
-                    renderer.draw( renderer.defaultRenderTarget(), shdTex, stateSet, geoQuad );
+                    shdDefLight[ "s2D_diffuse" ] = noo::renderer::TextureSampler{ rt_def_diffuse.get(), EWrapMode::CLAMP, EWrapMode::CLAMP, EMinFilterMode::NEAREST, EMagFilterMode::NEAREST };
+                    shdDefLight[ "s2D_position" ] = noo::renderer::TextureSampler{ rt_def_position.get(), EWrapMode::CLAMP, EWrapMode::CLAMP, EMinFilterMode::NEAREST, EMagFilterMode::NEAREST };
+                    shdDefLight[ "s2D_normal" ] = noo::renderer::TextureSampler{ rt_def_normal.get(), EWrapMode::CLAMP, EWrapMode::CLAMP, EMinFilterMode::NEAREST, EMagFilterMode::NEAREST };
+                    shdDefLight[ "u_light_pos" ] = glm::vec3( 10, 10, 10 );
+                    shdDefLight[ "u_light_color" ] = glm::vec3( 1.0, 1.0, 1.0 );
+                    shdDefLight[ "u_view_pos" ] = cam.getPosition();
+                    renderer.draw( renderer.defaultRenderTarget(), shdDefLight, stateSet, geoQuad );
                 }
             }
         }
 
         glfwSwapBuffers( window );
         glfwPollEvents();
-
-        ++frame;
     }
 
     renderer.destroy();

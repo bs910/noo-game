@@ -43,7 +43,7 @@ public:
     { glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ); }
 
     void
-    upload( size_t numBytes, void * data )
+    upload( uint32_t numBytes, void * data )
     {
         glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, m_GLHandle );
         glBufferData( GL_ELEMENT_ARRAY_BUFFER, numBytes, data, GL_STATIC_DRAW );

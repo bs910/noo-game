@@ -80,6 +80,7 @@ struct VertexDescription
     int Stride;
 };
 
+#pragma pack(push,1)
 struct Vertex_Pos3
 {
     float x, y, z;
@@ -150,6 +151,7 @@ struct Vertex_Pos3Nrm3
     }
 };
 
+#pragma pack(pop)
 
 } // - namespace renderer
 } // - namespace noo
