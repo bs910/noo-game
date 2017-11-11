@@ -231,12 +231,12 @@ public:
             throw std::exception();
         }
 
-        Shader &
-        getShader()
+        Shader const &
+        getShader() const
         { return m_Shader; }
 
-        std::vector< UniformData > &
-        getUniformData()
+        std::vector< UniformData > const &
+        getUniformData() const
         { return m_UniformData; }
 
     private:
@@ -258,13 +258,13 @@ public:
     };
 
     void
-    activate()
+    activate() const
     {
         glUseProgram( m_ProgramHandle );
     }
 
     void
-    deactivate()
+    deactivate() const
     {
         glUseProgram( 0 );
     }

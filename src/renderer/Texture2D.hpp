@@ -60,7 +60,7 @@ class Texture2D
 public:
 
     void
-    activate( int textureSlot = 0 )
+    activate( int textureSlot = 0 ) const
     {
         glActiveTexture( GL_TEXTURE0 + textureSlot );
         glBindTexture( GL_TEXTURE_2D, m_TextureHandle );

@@ -20,9 +20,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
+
 
 /// Using declarations
 
@@ -34,63 +32,6 @@ namespace geometry {
 class GeometryUtils
 {
 public:
-
-
-    static bool
-    loadMeshFromFile( std::string const & filename
-                    , std::vector< glm::vec3 > & outPositions
-                    , std::vector< glm::vec3 > & outNormals
-                    , std::vector< uint32_t >  & outIndices
-                    , glm::vec3 & outMaterial )
-    {
-        Assimp::Importer importer;
-        aiScene const * ai_scene = importer.ReadFile( filename.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals );
-
-        if ( nullptr == ai_scene )
-        {
-            /* fail */
-            return false;
-        }
-
-        std::cout << "Num Materials: " << ai_scene->mNumMaterials << std::endl;
-
-        for ( int m = 0; m < ai_scene->mNumMeshes; ++m )
-        {
-            aiMesh * mesh = ai_scene->mMeshes[ m ];
-            aiMaterial * mtl = ai_scene->mMaterials[ mesh->mMaterialIndex ];
-
-            aiColor3D diffuseColor{ 1, 0, 1 };
-            mtl->Get( AI_MATKEY_COLOR_DIFFUSE, diffuseColor );
-
-            outMaterial = glm::vec3{ diffuseColor.r, diffuseColor.g, diffuseColor.b };
-
-            for ( int v = 0; v < mesh->mNumVertices; ++v )
-            {
-                aiVector3D p = mesh->mVertices[ v ];
-                aiVector3D n = mesh->mNormals[ v ];
-
-                outPositions.emplace_back( p.x, p.y, p.z );
-                outNormals.emplace_back( n.x, n.y, n.z );
-            }
-
-            for ( int f = 0; f < mesh->mNumFaces; ++f )
-            {
-                aiFace & face = mesh->mFaces[ f ];
-
-                assert( face.mNumIndices == 3 );
-
-                int i0 = face.mIndices[ 0 ];
-                int i1 = face.mIndices[ 1 ];
-                int i2 = face.mIndices[ 2 ];
-
-                outIndices.push_back( i0 );
-                outIndices.push_back( i1 );
-                outIndices.push_back( i2 );
-            }
-        }
-
-        return true;
-    }
 
     /*static void
     createSphere( size_t numStacks, size_t numSlices

@@ -93,7 +93,7 @@ public:
     }
 
     void
-    draw( RenderTarget const & rt, Shader::Data & shd, state::StateSet & state, Geometry & geo )
+    draw( RenderTarget const & rt, Shader::Data const & shd, state::StateSet const & state, Geometry const & geo )
     {
         // apply states
         // blend
@@ -194,7 +194,7 @@ public:
 
         for ( int i = 0; i < geo.VertexFormat.Components.size(); ++i )
         {
-            VertexComponent & v = geo.VertexFormat.Components[ i ];
+            VertexComponent const & v = geo.VertexFormat.Components[ i ];
 
             glEnableVertexAttribArray( i );
             glVertexAttribPointer( i, vcSize( v.Type ), toGLType( v.Type ), GL_FALSE, geo.VertexFormat.Stride, (GLvoid*)( v.Offset ) );
@@ -203,11 +203,11 @@ public:
         if ( geo.IsIndexed() )
         {
             geo.Indices->activate();
-            glDrawElements( GL_TRIANGLES, geo.NumPrimitives * 3, GL_UNSIGNED_INT, NULL );
+            glDrawElementsBaseVertex( GL_TRIANGLES, geo.NumPrimitives * 3, GL_UNSIGNED_INT, (GLvoid*)( sizeof(GLuint) * geo.Offset ), geo.BaseVertex );
         }
         else
         {
-            glDrawArrays( GL_TRIANGLES, 0, geo.NumPrimitives * 3 );
+            glDrawArrays( GL_TRIANGLES, geo.BaseVertex, geo.NumPrimitives * 3 );
         }
     }
 

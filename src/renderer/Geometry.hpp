@@ -34,6 +34,9 @@ struct Geometry
     VertexDescription VertexFormat;
 
     IndexBuffer * Indices;
+
+    int Offset = 0;
+    int BaseVertex = 0;
 };
 
 } // - namespace renderer

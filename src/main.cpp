@@ -4,6 +4,7 @@
 
 
 #include "scene/Camera.hpp"
+#include "scene/Model.hpp"
 #include "renderer/Renderer.hpp"
 #include "renderer/VertexTypes.hpp"
 #include "logging/Logger.hpp"
@@ -363,7 +364,7 @@ int main( int /* argc */, char ** /* argv */ )
     glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 5 );
     //glfwWindowHint( GLFW_SAMPLES, 16 ); // enable multi-sampling
 
-    glm::ivec2 const window_size( 800, 600 );
+    glm::ivec2 const window_size( 1200, 800 );
     GLFWwindow * window = glfwCreateWindow( window_size.x, window_size.y, "Nation of One", nullptr, nullptr );
 
     InputHandler inputHandler;
@@ -396,8 +397,8 @@ int main( int /* argc */, char ** /* argv */ )
     using noo::renderer::EImageFormat;
     using noo::renderer::EImagePixelType;
 
-    int const rt_width  = 400;
-    int const rt_height = 300;
+    int const rt_width  = window_size.x / 2;
+    int const rt_height = window_size.y / 2;
 
     auto rt = renderer.createRenderTarget( rt_width, rt_height );
     auto rt_color = renderer.createTexture2D( rt_width, rt_height, ETextureFormat::RGB, nullptr, EImageFormat::RGB, EImagePixelType::UBYTE );
@@ -494,7 +495,7 @@ int main( int /* argc */, char ** /* argv */ )
 
 
     noo::scene::Camera cam;
-    cam.setAspectRatio( 800.0f / 600.0f );
+    cam.setAspectRatio( static_cast< float >( window_size.x ) / window_size.y );
     cam.setPosition( 0, 0, 3 );
     cam.lookAt( 0, 0, 0 );
 
@@ -546,43 +547,21 @@ int main( int /* argc */, char ** /* argv */ )
     geoSphere.VertexFormat = noo::renderer::Vertex_Pos3Nrm3::VertexDesc();
 
 
-    std::string const meshFilename = "/home/ben/torus.obj";
-    std::vector< glm::vec3 > meshPos;
-    std::vector< glm::vec3 > meshNrm;
-    std::vector< uint32_t > meshInd;
-    glm::vec3 meshMtl{ 0, 0, 0 };
-    bool mesh_loaded = noo::geometry::GeometryUtils::loadMeshFromFile( meshFilename, meshPos, meshNrm, meshInd, meshMtl );
+    //std::string const meshFilename = "/home/ben/torus.obj";
+    //std::string const meshFilename = "/home/ben/torus_smooth.obj";
+    std::string const meshFilename = "/home/ben/Documents/models/low_poly_terrain.dae";
+    noo::scene::Model myModel;
 
-    if ( mesh_loaded )
+    bool model_loaded = noo::scene::Model::createFromFile( meshFilename, myModel );
+
+    if ( model_loaded )
     {
-        noolog::info( "Mesh " + meshFilename + " successfully loaded." );
+        noolog::info( "Model " + meshFilename + " successfully loaded." );
     }
     else
     {
-        noolog::error( "Mesh " + meshFilename + " couldn't be loaded." );
+        noolog::error( "Model " + meshFilename + " couldn't be loaded." );
     }
-
-    std::vector< noo::renderer::Vertex_Pos3Nrm3 > vMesh;
-
-    for ( int i = 0; i < meshPos.size(); ++i )
-    {
-        glm::vec3 p = meshPos[ i ];
-        glm::vec3 n = meshNrm[ i ];
-
-        vMesh.push_back( { p.x, p.y, p.z, n.x, n.y, n.z } );
-    }
-
-    auto vbo_mesh = renderer.createVertexBuffer();
-    vbo_mesh->upload( vMesh.size() * noo::renderer::Vertex_Pos3Nrm3::SizeInBytes, vMesh.data() );
-
-    auto ibo_mesh = renderer.createIndexBuffer();
-    ibo_mesh->upload( meshInd.size() * sizeof( uint32_t ), meshInd.data() );
-
-    noo::renderer::Geometry geoMesh;
-    geoMesh.Vertices = vbo_mesh.get();
-    geoMesh.Indices = ibo_mesh.get();
-    geoMesh.NumPrimitives = meshInd.size() / 3;
-    geoMesh.VertexFormat = noo::renderer::Vertex_Pos3Nrm3::VertexDesc();
 
     using noo::renderer::EWrapMode;
     using noo::renderer::EMinFilterMode;
@@ -594,7 +573,7 @@ int main( int /* argc */, char ** /* argv */ )
 
         // pre-pass - render to texture
         {
-            if ( rms.State == 4 && mesh_loaded )
+            if ( rms.State == 4 && model_loaded )
             {
                 renderer.clear( *rt_def, { 0, 0, 0, 0 }, 1.0f, 0 );
 
@@ -603,13 +582,14 @@ int main( int /* argc */, char ** /* argv */ )
 
                 shdDefPre[ "u_mvp" ] = cam.getViewProjectionMatrix();
                 shdDefPre[ "u_mat_rot" ] = glm::mat3(); //glm::mat3( cam.getViewMatrix() );
-                shdDefPre[ "u_color" ] = meshMtl;
 
-                renderer.draw( *rt_def, shdDefPre, stateSet, geoMesh );
+                myModel.draw( renderer, *rt_def, shdDefPre, stateSet );
 
-                stateSet.cull.FrontFaceWinding = noo::renderer::state::EFrontFaceWinding::CW;
+                /*stateSet.cull.FrontFaceWinding = noo::renderer::state::EFrontFaceWinding::CW;
+                shdDefPre[ "u_color" ] = glm::vec3( 0, 1, 0 );
                 shdDefPre[ "u_mvp" ] = cam.getViewProjectionMatrix() * glm::scale( glm::vec3{ 0.5, 0.5, 0.5 } );
-                renderer.draw( *rt_def, shdDefPre, stateSet, geoSphere );
+
+                renderer.draw( *rt_def, shdDefPre, stateSet, geoSphere );*/
             }
             else
             {
@@ -690,7 +670,7 @@ int main( int /* argc */, char ** /* argv */ )
                     shdDefLight[ "s2D_diffuse" ] = noo::renderer::TextureSampler{ rt_def_diffuse.get(), EWrapMode::CLAMP, EWrapMode::CLAMP, EMinFilterMode::NEAREST, EMagFilterMode::NEAREST };
                     shdDefLight[ "s2D_position" ] = noo::renderer::TextureSampler{ rt_def_position.get(), EWrapMode::CLAMP, EWrapMode::CLAMP, EMinFilterMode::NEAREST, EMagFilterMode::NEAREST };
                     shdDefLight[ "s2D_normal" ] = noo::renderer::TextureSampler{ rt_def_normal.get(), EWrapMode::CLAMP, EWrapMode::CLAMP, EMinFilterMode::NEAREST, EMagFilterMode::NEAREST };
-                    shdDefLight[ "u_light_pos" ] = glm::vec3( 10, 10, 10 );
+                    shdDefLight[ "u_light_pos" ] = glm::vec3( 0, 0, 5 );
                     shdDefLight[ "u_light_color" ] = glm::vec3( 1.0, 1.0, 1.0 );
                     shdDefLight[ "u_view_pos" ] = cam.getPosition();
                     renderer.draw( renderer.defaultRenderTarget(), shdDefLight, stateSet, geoQuad );
