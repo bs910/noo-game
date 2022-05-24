@@ -581,7 +581,7 @@ int main( int /* argc */, char ** /* argv */ )
                 if ( rms.Wireframe ) stateSet.rasterizer = noo::renderer::state::RasterizerState::Wireframe();
 
                 shdDefPre[ "u_mvp" ] = cam.getViewProjectionMatrix();
-                shdDefPre[ "u_mat_rot" ] = glm::mat3(); //glm::mat3( cam.getViewMatrix() );
+                shdDefPre[ "u_mat_rot" ] = glm::mat3(1); //glm::mat3( cam.getViewMatrix() );
 
                 myModel.draw( renderer, *rt_def, shdDefPre, stateSet );
 
@@ -629,7 +629,7 @@ int main( int /* argc */, char ** /* argv */ )
 
             renderer.clear( renderer.defaultRenderTarget(), glm::vec4( 0, 1, 0, 1 ) );
             {
-                shdTex[ "u_mvp" ] = glm::mat4();
+                shdTex[ "u_mvp" ] = glm::mat4(1);
 
                 if ( rms.State == 1 )
                 {
