@@ -353,7 +353,7 @@ static void scrollCallback( GLFWwindow * window, double xoffset, double yoffset 
 /// @brief Application entry point.
 int main( int /* argc */, char ** /* argv */ )
 {
-    noolog::info( "Hello Nation of One!" );
+    noolog::info( "Hello Deferred Rendering!" );
 
     if ( ! glfwInit() )
     {
@@ -365,7 +365,7 @@ int main( int /* argc */, char ** /* argv */ )
     //glfwWindowHint( GLFW_SAMPLES, 16 ); // enable multi-sampling
 
     glm::ivec2 const window_size( 1200, 800 );
-    GLFWwindow * window = glfwCreateWindow( window_size.x, window_size.y, "Nation of One", nullptr, nullptr );
+    GLFWwindow * window = glfwCreateWindow( window_size.x, window_size.y, "Deferred Rendering Demo", nullptr, nullptr );
 
     InputHandler inputHandler;
     glfwSetWindowUserPointer( window, &inputHandler );
@@ -390,6 +390,7 @@ int main( int /* argc */, char ** /* argv */ )
 
     glm::vec4 const clrColor{ 0.39, 0.58, 0.92, 1.0 };
 
+    {
     noo::renderer::Renderer renderer;
     renderer.initialize( window_size.x, window_size.y );
 
@@ -550,9 +551,9 @@ int main( int /* argc */, char ** /* argv */ )
     //std::string const meshFilename = "/home/ben/torus.obj";
     //std::string const meshFilename = "/home/ben/torus_smooth.obj";
     std::string const meshFilename = "/home/ben/Documents/models/low_poly_terrain.dae";
-    noo::scene::Model myModel;
+    auto myModel = std::make_unique< noo::scene::Model >();
 
-    bool model_loaded = noo::scene::Model::createFromFile( meshFilename, myModel );
+    bool model_loaded = noo::scene::Model::createFromFile( meshFilename, *myModel );
 
     if ( model_loaded )
     {
@@ -583,7 +584,7 @@ int main( int /* argc */, char ** /* argv */ )
                 shdDefPre[ "u_mvp" ] = cam.getViewProjectionMatrix();
                 shdDefPre[ "u_mat_rot" ] = glm::mat3(1); //glm::mat3( cam.getViewMatrix() );
 
-                myModel.draw( renderer, *rt_def, shdDefPre, stateSet );
+                myModel->draw( renderer, *rt_def, shdDefPre, stateSet );
 
                 /*stateSet.cull.FrontFaceWinding = noo::renderer::state::EFrontFaceWinding::CW;
                 shdDefPre[ "u_color" ] = glm::vec3( 0, 1, 0 );
@@ -683,10 +684,11 @@ int main( int /* argc */, char ** /* argv */ )
     }
 
     renderer.destroy();
+    }
 
     glfwTerminate();
 
-    noolog::info( "Goodbye, Nation of One!" );
+    noolog::info( "Goodbye." );
 
     return 0;
 }
