@@ -48,7 +48,7 @@ void main()
 
 //    float c_diff = max( dot( normal, light_dir ), 0.0 );
 
-    float c_diff = oren_nayar( light_dir, normal, view_dir, 0.8, 0.96 );
+    float c_diff = oren_nayar( light_dir, normal, view_dir, 0.8, 1.96 );
     float c_spec = pow( max( dot( view_dir, reflect_dir ), 0.0 ), 2 );
 
     vec3 color = diffuse * u_light_color * c_diff;
